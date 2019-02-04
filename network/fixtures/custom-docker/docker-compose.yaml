@@ -1,0 +1,306 @@
+version: '2'
+
+services:
+  aliceca1:
+    image: hyperledger/fabric-ca:amd64-1.3.0
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.alice.shareplatform.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.alice.shareplatform.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/36a099621b1e5d235dbe8c6c38e22e51a27527b562ba9ef1867490b5f4447e6b_sk
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/tls/peer/server.crt
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/tls/peer/server.key
+      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE
+      - FABRIC_CA_SERVER_TLS_CERTFILES
+      - FABRIC_CA_SERVER_CFG_AFFILIATIONS_ALLOWREMOVE=true
+      - FABRIC_CA_SERVER_CFG_IDENTITIES_ALLOWREMOVE=true
+    logging:
+      driver: none
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../fabric/v1/crypto-config/peerOrganizations/alice.shareplatform.com/ca/:/etc/hyperledger/fabric-ca-server-config/
+      - ../fabric/v1/crypto-config/peerOrganizations/alice.shareplatform.com/peers/ca.alice.shareplatform.com/tls:/etc/hyperledger/tls/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/tlsca
+    networks:
+      default:
+        aliases:
+          - ca.alice.shareplatform.com
+
+  bobca1:
+    image: hyperledger/fabric-ca:amd64-1.3.0
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.bob.shareplatform.com
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.bob.shareplatform.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/6761ca63a0f4193c1022b8243ba2f9659c2e927672bdadcd546b6fd6d6c5030e_sk
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/tls/peer/server.crt
+      - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/tls/peer/server.key
+      - FABRIC_CA_SERVER_TLS_CLIENTAUTH_TYPE
+      - FABRIC_CA_SERVER_TLS_CERTFILES
+      - FABRIC_CA_SERVER_CFG_AFFILIATIONS_ALLOWREMOVE=true
+      - FABRIC_CA_SERVER_CFG_IDENTITIES_ALLOWREMOVE=true
+    logging:
+      driver: none
+    ports:
+      - "8054:8054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d -p 8054'
+    volumes:
+      - ../fabric/v1/crypto-config/peerOrganizations/bob.shareplatform.com/ca/:/etc/hyperledger/fabric-ca-server-config/
+      - ../fabric/v1/crypto-config/peerOrganizations/bob.shareplatform.com/peers/ca.bob.shareplatform.com/tls:/etc/hyperledger/tls/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/tlsca
+    networks:
+      default:
+        aliases:
+          - ca.bob.shareplatform.com
+
+  orderer1:
+    image: hyperledger/fabric-orderer:amd64-1.3.0
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=info
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/twoorgs.genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp/orderer
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/etc/hyperledger/tls/orderer/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/etc/hyperledger/tls/orderer/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/etc/hyperledger/tls/orderer/ca.crt]
+      - ORDERER_GENERAL_TLS_CLIENTAUTHENABLED
+      - ORDERER_GENERAL_TLS_CLIENTROOTCAS
+    logging:
+      driver: none
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+    command: orderer
+    ports:
+      - 7050:7050
+    volumes:
+      - ../fabric/v1.3/channel:/etc/hyperledger/configtx
+      - ../fabric/v1/crypto-config/ordererOrganizations/shareplatform.com/orderers/orderer.shareplatform.com/msp:/etc/hyperledger/msp/orderer
+      - ../fabric/v1/crypto-config/ordererOrganizations/shareplatform.com/orderers/orderer.shareplatform.com/tls:/etc/hyperledger/tls/orderer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/tlsca
+    networks:
+      default:
+        aliases:
+          - orderer.shareplatform.com
+
+  alicepeer1:
+    image: hyperledger/fabric-peer:amd64-1.3.0
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.alice.shareplatform.com
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_SHIM=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=debug
+      - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:amd64-1.3.0
+      - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:amd64-0.4.10
+      - CORE_CHAINCODE_EXECUTETIMEOUT=120s
+      - CORE_VM_DOCKER_ATTACHSTDOUT=false
+      - CORE_PEER_LOCALMSPID=AliceMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=127.0.0.1:7051
+      - CORE_PEER_ADDRESS=peer0.alice.shareplatform.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.alice.shareplatform.com:7051
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/tls/peer/server.key
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/tls/peer/server.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/tls/peer/ca.crt
+      - CORE_PEER_TLS_CLIENTAUTHREQUIRED
+      - CORE_PEER_TLS_CLIENTROOTCAS_FILES
+      - CORE_PEER_NETWORKID=ion
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=ion_default
+    logging:
+      driver: none
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "7051:7051"
+    expose:
+      - "7051"
+      - "7052"
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../fabric/v1/crypto-config/peerOrganizations/alice.shareplatform.com/peers/peer0.alice.shareplatform.com/msp:/etc/hyperledger/msp/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/alice.shareplatform.com/peers/peer0.alice.shareplatform.com/tls:/etc/hyperledger/tls/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/orgs/tls.shareplatform.com/tlsca
+    networks:
+      default:
+        aliases:
+          - peer0.alice.shareplatform.com
+    depends_on:
+      - orderer1
+      - builder
+      - golangruntime
+
+  alicepeer2:
+    image: hyperledger/fabric-peer:amd64-1.3.0
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.alice.shareplatform.com
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_SHIM=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=debug
+      - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:amd64-1.3.0
+      - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:amd64-0.4.10
+      - CORE_CHAINCODE_EXECUTETIMEOUT=120s
+      - CORE_VM_DOCKER_ATTACHSTDOUT=false
+      - CORE_PEER_LOCALMSPID=AliceMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7151
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7152
+      - CORE_PEER_ADDRESS=peer1.alice.shareplatform.com:7151
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.alice.shareplatform.com:7151
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.alice.shareplatform.com:7051
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/tls/peer/server.key
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/tls/peer/server.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/tls/peer/ca.crt
+      - CORE_PEER_TLS_CLIENTAUTHREQUIRED
+      - CORE_PEER_TLS_CLIENTROOTCAS_FILES
+      - CORE_PEER_NETWORKID=ion
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=ion_default
+    logging:
+      driver: none
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "7151:7151"
+    expose:
+      - "7151"
+      - "7152"
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../fabric/v1/crypto-config/peerOrganizations/alice.shareplatform.com/peers/peer1.alice.shareplatform.com/msp:/etc/hyperledger/msp/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/alice.shareplatform.com/peers/peer1.alice.shareplatform.com/tls:/etc/hyperledger/tls/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/orgs/tls.shareplatform.com/tlsca
+    networks:
+      default:
+        aliases:
+          - peer1.alice.shareplatform.com
+    depends_on:
+      - orderer1
+      - builder
+      - golangruntime
+
+  bobpeer1:
+    image: hyperledger/fabric-peer:amd64-1.3.0
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.bob.shareplatform.com
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_SHIM=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=debug
+      - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:amd64-1.3.0
+      - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:amd64-0.4.10
+      - CORE_CHAINCODE_EXECUTETIMEOUT=120s
+      - CORE_VM_DOCKER_ATTACHSTDOUT=false
+      - CORE_PEER_LOCALMSPID=BobMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
+      - CORE_PEER_ADDRESS=peer0.bob.shareplatform.com:8051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.bob.shareplatform.com:8051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=127.0.0.1:8051
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/tls/peer/server.key
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/tls/peer/server.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/tls/peer/ca.crt
+      - CORE_PEER_TLS_CLIENTAUTHREQUIRED
+      - CORE_PEER_TLS_CLIENTROOTCAS_FILES
+      - CORE_PEER_NETWORKID=ion
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=ion_default
+    logging:
+      driver: none
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "8051:8051"
+    expose:
+      - "8051"
+      - "8052"
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../fabric/v1/crypto-config/peerOrganizations/bob.shareplatform.com/peers/peer0.bob.shareplatform.com/msp:/etc/hyperledger/msp/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/bob.shareplatform.com/peers/peer0.bob.shareplatform.com/tls:/etc/hyperledger/tls/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/orgs/tls.shareplatform.com/tlsca
+    networks:
+      default:
+        aliases:
+          - peer0.bob.shareplatform.com
+    depends_on:
+      - orderer1
+      - builder
+      - golangruntime
+
+  bobpeer2:
+    image: hyperledger/fabric-peer:amd64-1.3.0
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.bob.shareplatform.com
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_SHIM=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=debug
+      - CORE_CHAINCODE_BUILDER=hyperledger/fabric-ccenv:amd64-1.3.0
+      - CORE_CHAINCODE_GOLANG_RUNTIME=hyperledger/fabric-baseos:amd64-0.4.10
+      - CORE_CHAINCODE_EXECUTETIMEOUT=120s
+      - CORE_VM_DOCKER_ATTACHSTDOUT=false
+      - CORE_PEER_LOCALMSPID=BobMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_ADDRESS=peer1.bob.shareplatform.com:9051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.bob.shareplatform.com:9051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.bob.shareplatform.com:8051
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/tls/peer/server.key
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/tls/peer/server.crt
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/tls/peer/ca.crt
+      - CORE_PEER_TLS_CLIENTAUTHREQUIRED
+      - CORE_PEER_TLS_CLIENTROOTCAS_FILES
+      - CORE_PEER_NETWORKID=ion
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=ion_default
+    logging:
+      driver: none
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "9051:9051"
+    expose:
+      - "9051"
+      - "9052"
+    volumes:
+      - /var/run/:/host/var/run/
+      - ../fabric/v1/crypto-config/peerOrganizations/bob.shareplatform.com/peers/peer1.bob.shareplatform.com/msp:/etc/hyperledger/msp/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/bob.shareplatform.com/peers/peer1.bob.shareplatform.com/tls:/etc/hyperledger/tls/peer
+      - ../fabric/v1/crypto-config/peerOrganizations/tls.shareplatform.com/tlsca:/etc/hyperledger/orgs/tls.shareplatform.com/tlsca
+    networks:
+      default:
+        aliases:
+          - peer1.bob.shareplatform.com
+    depends_on:
+      - orderer1
+      - builder
+      - golangruntime
+
+ # builder is only here to create a dependency on the image (not used as part of compose)
+  builder:
+    image: hyperledger/fabric-ccenv:amd64-1.3.0
+    command: tail -F anything
+    logging:
+      driver: none
+
+ # golangruntime is only here to create a dependency on the image (not used as part of compose)
+  golangruntime:
+    image: hyperledger/fabric-baseos:amd64-0.4.10
+    command: tail -F anything
+    logging:
+      driver: none
+
+networks:
+    default:

@@ -1,0 +1,58 @@
+{
+  "name": "ion-fabric",
+  "version": "1.0.0",
+  "description": "Hyperledger Fabric and Ethereum test networks with a sample use case to showcase Ion framework ",
+  "main": "truffle.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "dependencies": {
+    "bignumber.js": "^8.0.1",
+    "ethereumjs-block": "^2.0.0",
+    "ethereumjs-tx": "^1.3.5",
+    "merkle-patricia-tree": "^2.3.1",
+    "node-gyp": "^3.8.0",
+    "rlp": "^2.0.0",
+    "solc": "^0.4.25",
+    "solhint": "^1.1.10",
+    "truffle-assertions": "^0.6.3",
+    "web3-eth-accounts": "^1.0.0-beta.34"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "ganache-cli": "^6.0.0",
+    "json-bigint-string": "^1.0.0",
+    "solidity-coverage": "^0.5.0",
+    "truffle": "^4.1.7",
+    "web3": "1.0.0-beta.33",
+    "web3-eth-abi": "1.0.0-beta.33",
+    "web3-utils": "1.0.0-beta.33"
+  },
+  "scripts": {
+    "testrpc": "ganache-cli --account='0x38b28852453c28e3e42eab4b352e9f1211d458cabbeee01899050fd7bf14e7b5,1000000000000000000000000000000000000000' --account='0x0eaef0cd89b5ad75572717ec6df5d299e77eab04c87f25073812bf5fa2f5d55b,1000000000000000000000000000000000000000' --port 8545 --gasLimit 0xFFFFFFFFFFF --gasPrice 0 --defaultBalanceEther 99999999999 --networkId 1234",
+    "compile": "truffle compile",
+    "deploy": "truffle deploy",
+    "test": "truffle test",
+    "debug": "truffle debug",
+    "coverage": "solidity-coverage",
+    "lint": "solhint contracts/**/*.sol",
+    "genbin": "solc --overwrite --bin ./contracts/*.sol -o abi",
+    "genabi": "solc --overwrite --abi ./contracts/*.sol -o abi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clearmatics/ion-fabric.git"
+  },
+  "keywords": [
+    "ion",
+    "fabric"
+  ],
+  "author": "FMGrabner",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/clearmatics/ion-fabric/issues"
+  },
+  "homepage": "https://github.com/clearmatics/ion-fabric#readme"
+}

@@ -1,0 +1,39 @@
+# Copyright SecureKey Technologies Inc. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+OrdererOrgs:
+  - Name: OrdererOrg
+    Domain: shareplatform.com
+    Specs:
+      - Hostname: orderer
+
+PeerOrgs:
+  - Name: Alice
+    Domain: alice.shareplatform.com
+    EnableNodeOUs: false
+    Specs:
+      - Hostname: peer0
+      - Hostname: peer1
+      - Hostname: ca
+    Users:
+      Count: 1
+
+  - Name: Bob
+    Domain: bob.shareplatform.com
+    EnableNodeOUs: false
+    Specs:
+      - Hostname: peer0
+      - Hostname: peer1
+      - Hostname: ca
+    Users:
+      Count: 1
+
+  - Name: TLSOrg
+    Domain: tls.shareplatform.com
+    EnableNodeOUs: false
+    Specs:
+      - Hostname: ca
+    Users:
+      Count: 1

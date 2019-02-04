@@ -1,0 +1,64 @@
+@startuml
+skinparam ParticipantPadding 20
+skinparam BoxPadding 10
+
+
+box "Ethereum Network"
+participant SA as "State"
+participant FA as "Fabric Block Storage"
+participant IA as "ShareSettle"
+participant TA as "Token"
+end box
+
+actor AA as "Alice"
+actor BB as "Bob"
+
+box "SharesChannel"
+participant CB as "SimpleShares"
+participant DB as "Local Ledger"
+end box
+
+== Initialise ==
+group Fund Bob 
+    BB -> TA : mint(1000)
+end group
+
+group Issue Alice Shares 
+    AA -> CB : invoke["issue", "IonCorp", "1000", "Alice.address"]
+end group
+
+group Create Trade Agreement
+    BB -> IA : initiateTrade("IonCorp", Alice, value, price, reference)
+end group
+
+== Match Order & Transfer Shares ==
+group Match Trade Orders
+    BB -> CB : invoke["order", "buy", "IonCorp", "5", "100", "Bob.address", "ref"]
+    DB --[#000000]>> DB : block created
+    AA -> CB : invoke["order", "sell", "IonCorp", "5", "100", "Alice.address", "ref"]
+    DB --[#000000]>> DB : block created
+    BB -> TA : transfer(500, ShareSettle.address, ref)
+    TA -> IA : tokenFallBack(500, ref)
+    SA --[#000000]>> SA : block created
+end group
+group Transfer Shares
+    BB -> CB : invoke["transfer", "ref"]
+    DB --[#000000]>> DB : block created
+end group
+
+== Submit Block to Ion ==
+AA<<--[#555555]>>DB : [query and encode block]
+group Submit Block to Ion
+    AA -> FA : submitBlock(chainId, rlpBlock, storage.address)
+    SA --[#000000]>> SA : block created
+end group
+
+== Settle Trade ==
+group Submit Transfer Proof
+    BB -> IA : retrieveAndExecute(chainId, channelId, keyValue)
+    IA -> AA : transfer(500, Alice.address, ref)
+    SA --[#000000]>> SA : block created
+end group
+
+
+@enduml
